@@ -3,124 +3,983 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Presupuesto PRO</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#2c3e50">
+    <title>Presupuestos Pro - Construcción</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root { --primary: #2c3e50; --secondary: #27ae60; --danger: #e74c3c; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: var(--bg); color: #333; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { color: var(--primary); text-align: center; border-bottom: 3px solid var(--primary); padding-bottom: 10px; }
-        
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; background: #eceff1; padding: 15px; border-radius: 8px; }
-        .info-item b { display: block; color: var(--primary); font-size: 0.9em; }
-        [contenteditable] { background: white; padding: 5px; border: 1px solid #ddd; border-radius: 4px; min-height: 1.2em; display: inline-block; width: 90%; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background: var(--primary); color: white; padding: 12px; text-align: left; }
-        td { padding: 10px; border-bottom: 1px solid #eee; }
-        
-        .total-section { margin-top: 20px; text-align: right; font-size: 1.1em; border-top: 2px solid var(--primary); padding-top: 10px; }
-        .total-final { font-size: 1.5em; font-weight: bold; color: var(--secondary); }
-
-        .actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
-        button { flex: 1; padding: 12px; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; min-width: 140px; }
-        .btn-add { background: var(--primary); }
-        .btn-print { background: var(--secondary); }
-        .btn-clear { background: var(--danger); }
-        button:hover { opacity: 0.8; }
-
-        @media print { .actions, .btn-remove { display: none !important; } .container { box-shadow: none; width: 100%; } [contenteditable] { border: none; } }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, sans-serif; }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+        input[type="number"] { -moz-appearance: textfield; }
+        .fade-in { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .input-focus:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); outline: none; }
     </style>
 </head>
 <body>
+    <div id="root"></div>
+    <script>
+        // ============================================
+        // SECCIÓN 1: ÍCONOS SVG
+        // ============================================
+        const icons = {
+            plus: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+            trash: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 6h18"/></svg>',
+            save: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg>',
+            download: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>',
+            menu: '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>',
+            x: '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+            ruler: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>',
+            settings: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6"/></svg>',
+            user: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+            file: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+        };
 
-<div class="container">
-    <h1>PRESUPUESTO</h1>
+        // ============================================
+        // SECCIÓN 2: ESTADO DE LA APLICACIÓN
+        // ============================================
+        let state = {
+            empresa: {
+                nombre: localStorage.getItem('empresa_nombre') || 'Mi Empresa Construcción S.L.',
+                cif: localStorage.getItem('empresa_cif') || 'B-12345678',
+                direccion: localStorage.getItem('empresa_direccion') || 'Calle Principal 123, Barcelona',
+                telefono: localStorage.getItem('empresa_telefono') || '+34 600 000 000',
+                email: localStorage.getItem('empresa_email') || 'info@miempresa.com',
+                web: localStorage.getItem('empresa_web') || 'www.miempresa.com'
+            },
+            cliente: { nombre: '', telefono: '', direccion: '', email: '' },
+            presupuesto: {
+                numero: generarNumero(),
+                fecha: new Date().toISOString().split('T')[0],
+                estado: 'pendiente',
+                validez: '30 días',
+                notas: ''
+            },
+            iva: 21,
+            descuento: 0,
+            anticipo: 0,
+            tabiques: [],
+            techos: [],
+            cajones: [],
+            tabicas: [],
+            cantoneras: [],
+            horas: [],
+            presupuestos: [],
+            mostrarGuardados: false,
+            mostrarAjustes: false,
+            menuAbierto: false,
+            calculadora: { abierta: false, medidas: [], tipo: '', itemId: null, campo: '' }
+        };
 
-    <div class="info-grid">
-        <div class="info-item"><b>EMPRESA:</b> <span contenteditable="true">Nombre Empresa</span></div>
-        <div class="info-item"><b>CLIENTE:</b> <span contenteditable="true">Nombre Cliente</span></div>
-        <div class="info-item"><b>Nº PRESUPUESTO:</b> <span contenteditable="true">001</span></div>
-        <div class="info-item"><b>FECHA:</b> <span id="fechaActual"></span></div>
-    </div>
-
-    <table id="tabla">
-        <thead>
-            <tr>
-                <th style="width: 50%;">Descripción</th>
-                <th>Cant.</th>
-                <th>Precio (€)</th>
-                <th>Total</th>
-                <th class="btn-remove"></th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td contenteditable="true">Mano de obra / Materiales</td>
-                <td contenteditable="true" class="qty" oninput="calcular()">1</td>
-                <td contenteditable="true" class="price" oninput="calcular()">0</td>
-                <td class="row-total">0.00 €</td>
-                <td class="btn-remove"></td>
-            </tr>
-        </tbody>
-    </table>
-
-    <div class="actions">
-        <button class="btn-add" onclick="agregarFila()">+ Añadir Línea</button>
-        <button class="btn-clear" onclick="limpiarTodo()">Limpiar</button>
-        <button class="btn-print" onclick="window.print()">Guardar PDF / Enviar</button>
-    </div>
-
-    <div class="total-section">
-        <div>Subtotal: <span id="subtotal">0.00</span> €</div>
-        <div>IVA (21%): <span id="iva">0.00</span> €</div>
-        <div class="total-final">TOTAL: <span id="totalFinal">0.00</span> €</div>
-    </div>
-</div>
-
-<script>
-    document.getElementById('fechaActual').innerText = new Date().toLocaleDateString();
-
-    function agregarFila() {
-        const tbody = document.querySelector('#tabla tbody');
-        const nuevaFila = document.createElement('tr');
-        nuevaFila.innerHTML = `
-            <td contenteditable="true">Nuevo concepto</td>
-            <td contenteditable="true" class="qty" oninput="calcular()">1</td>
-            <td contenteditable="true" class="price" oninput="calcular()">0</td>
-            <td class="row-total">0.00 €</td>
-            <td class="btn-remove"><button onclick="this.parentElement.parentElement.remove(); calcular()" style="background:none; color:red; padding:0; min-width:auto;">✕</button></td>
-        `;
-        tbody.appendChild(nuevaFila);
-        calcular();
-    }
-
-    function calcular() {
-        let subtotal = 0;
-        document.querySelectorAll('#tabla tbody tr').forEach(row => {
-            const qty = parseFloat(row.querySelector('.qty').innerText) || 0;
-            const price = parseFloat(row.querySelector('.price').innerText) || 0;
-            const total = qty * price;
-            row.querySelector('.row-total').innerText = total.toFixed(2) + ' €';
-            subtotal += total;
-        });
-        const iva = subtotal * 0.21;
-        document.getElementById('subtotal').innerText = subtotal.toFixed(2);
-        document.getElementById('iva').innerText = iva.toFixed(2);
-        document.getElementById('totalFinal').innerText = (subtotal + iva).toFixed(2);
-    }
-
-    function limpiarTodo() {
-        if(confirm("¿Seguro que quieres borrar todo el presupuesto?")) {
-            location.reload();
+        // ============================================
+        // SECCIÓN 3: FUNCIONES AUXILIARES
+        // ============================================
+        function generarNumero() {
+            const año = new Date().getFullYear();
+            const contador = (parseInt(localStorage.getItem('contador')) || 0) + 1;
+            return `PRE-${año}-${String(contador).padStart(5, '0')}`;
         }
+
+        function mostrarNotif(msg, tipo = 'success') {
+            const div = document.createElement('div');
+            div.className = `fixed top-20 right-4 ${tipo === 'success' ? 'bg-green-600' : 'bg-red-600'} text-white px-6 py-3 rounded-lg shadow-xl z-50 fade-in`;
+            div.textContent = (tipo === 'success' ? '✓ ' : '✗ ') + msg;
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 3000);
+        }
+
+        // ============================================
+        // SECCIÓN 4: GESTIÓN DE EMPRESA
+        // ============================================
+        function guardarConfigEmpresa() {
+            Object.keys(state.empresa).forEach(k => localStorage.setItem(`empresa_${k}`, state.empresa[k]));
+            state.mostrarAjustes = false;
+            mostrarNotif('Configuración guardada correctamente');
+            render();
+        }
+
+        // ============================================
+        // SECCIÓN 5: CALCULADORA DE MEDIDAS
+        // ============================================
+        function abrirCalculadora(tipo, itemId, campo) {
+            state.calculadora = { abierta: true, medidas: [], tipo, itemId, campo };
+            render();
+        }
+
+        function cerrarCalculadora() {
+            state.calculadora.abierta = false;
+            render();
+        }
+
+        function añadirMedida() {
+            const val = parseFloat(document.getElementById('nueva-medida').value);
+            if (val && val > 0) {
+                state.calculadora.medidas.push(val);
+                document.getElementById('nueva-medida').value = '';
+                render();
+            }
+        }
+
+        function eliminarMedida(i) {
+            state.calculadora.medidas.splice(i, 1);
+            render();
+        }
+
+        function aplicarSuma() {
+            const total = state.calculadora.medidas.reduce((s, v) => s + v, 0);
+            const item = state[state.calculadora.tipo].find(i => i.id === state.calculadora.itemId);
+            if (item) item[state.calculadora.campo] = total.toFixed(2);
+            cerrarCalculadora();
+        }
+
+        // ============================================
+        // SECCIÓN 6: GESTIÓN DE PRESUPUESTOS
+        // ============================================
+        function cargarPresupuestos() {
+            state.presupuestos = Object.keys(localStorage)
+                .filter(k => k.startsWith('pres:'))
+                .map(k => JSON.parse(localStorage.getItem(k)))
+                .sort((a, b) => b.id - a.id);
+        }
+
+        function guardarPresupuesto() {
+            if (!state.cliente.nombre.trim()) {
+                mostrarNotif('Por favor ingresa el nombre del cliente', 'error');
+                return;
+            }
+            const p = {
+                id: Date.now(),
+                numero: state.presupuesto.numero,
+                fecha: state.presupuesto.fecha,
+                estado: state.presupuesto.estado,
+                validez: state.presupuesto.validez,
+                notas: state.presupuesto.notas,
+                empresa: {...state.empresa},
+                cliente: {...state.cliente},
+                iva: state.iva,
+                descuento: state.descuento,
+                anticipo: state.anticipo,
+                tabiques: [...state.tabiques],
+                techos: [...state.techos],
+                cajones: [...state.cajones],
+                tabicas: [...state.tabicas],
+                cantoneras: [...state.cantoneras],
+                horas: [...state.horas],
+                total: calcularTotal()
+            };
+            localStorage.setItem(`pres:${p.id}`, JSON.stringify(p));
+            localStorage.setItem('contador', parseInt(state.presupuesto.numero.split('-')[2]));
+            mostrarNotif('Presupuesto guardado correctamente');
+            state.menuAbierto = false;
+            cargarPresupuestos();
+            render();
+        }
+
+        function cargarPresupuesto(p) {
+            if (confirm('¿Cargar este presupuesto? Se perderán los cambios no guardados.')) {
+                Object.assign(state, {
+                    cliente: p.cliente,
+                    iva: p.iva || 21,
+                    descuento: p.descuento || 0,
+                    anticipo: p.anticipo || 0,
+                    tabiques: p.tabiques || [],
+                    techos: p.techos || [],
+                    cajones: p.cajones || [],
+                    tabicas: p.tabicas || [],
+                    cantoneras: p.cantoneras || [],
+                    horas: p.horas || [],
+                    presupuesto: {
+                        numero: p.numero,
+                        fecha: p.fecha,
+                        estado: p.estado || 'pendiente',
+                        validez: p.validez || '30 días',
+                        notas: p.notas || ''
+                    },
+                    mostrarGuardados: false,
+                    menuAbierto: false
+                });
+                render();
+            }
+        }
+
+        function copiarPresupuesto(p) {
+            state.cliente = { ...p.cliente };
+            state.iva = p.iva || 21;
+            state.descuento = p.descuento || 0;
+            state.anticipo = 0;
+            state.tabiques = JSON.parse(JSON.stringify(p.tabiques || []));
+            state.techos = JSON.parse(JSON.stringify(p.techos || []));
+            state.cajones = JSON.parse(JSON.stringify(p.cajones || []));
+            state.tabicas = JSON.parse(JSON.stringify(p.tabicas || []));
+            state.cantoneras = JSON.parse(JSON.stringify(p.cantoneras || []));
+            state.horas = JSON.parse(JSON.stringify(p.horas || []));
+            state.presupuesto.numero = generarNumero();
+            state.presupuesto.fecha = new Date().toISOString().split('T')[0];
+            state.presupuesto.estado = 'pendiente';
+            state.mostrarGuardados = false;
+            state.menuAbierto = false;
+            mostrarNotif('Presupuesto duplicado correctamente');
+            render();
+        }
+
+        function eliminarPresupuesto(id) {
+            if (confirm('¿Eliminar permanentemente este presupuesto?')) {
+                localStorage.removeItem(`pres:${id}`);
+                cargarPresupuestos();
+                mostrarNotif('Presupuesto eliminado');
+                render();
+            }
+        }
+
+        function nuevoPresupuesto() {
+            if (confirm('¿Crear nuevo presupuesto? Se perderán los datos no guardados.')) {
+                state.cliente = { nombre: '', telefono: '', direccion: '', email: '' };
+                state.presupuesto.numero = generarNumero();
+                state.presupuesto.fecha = new Date().toISOString().split('T')[0];
+                state.presupuesto.estado = 'pendiente';
+                state.presupuesto.notas = '';
+                state.iva = 21;
+                state.descuento = 0;
+                state.anticipo = 0;
+                state.tabiques = [];
+                state.techos = [];
+                state.cajones = [];
+                state.tabicas = [];
+                state.cantoneras = [];
+                state.horas = [];
+                state.menuAbierto = false;
+                render();
+            }
+        }
+
+        // ============================================
+        // SECCIÓN 7: GESTIÓN DE ITEMS
+        // ============================================
+        function addItem(tipo) {
+            const item = {
+                id: Date.now(),
+                metros: '',
+                altura: '',
+                ancho: '',
+                largo: '',
+                precio: '',
+                descripcion: ''
+            };
+            if (tipo === 'horas') {
+                state[tipo].push({
+                    id: Date.now(),
+                    horas: '',
+                    precio: '',
+                    descripcion: '',
+                    fecha: new Date().toISOString().split('T')[0]
+                });
+            } else {
+                state[tipo].push(item);
+            }
+            render();
+        }
+
+        function removeItem(tipo, id) {
+            if (confirm('¿Eliminar este elemento?')) {
+                state[tipo] = state[tipo].filter(i => i.id !== id);
+                render();
+            }
+        }
+
+        function updateItem(tipo, id, field, value) {
+            const item = state[tipo].find(i => i.id === id);
+            if (item) item[field] = value;
+        }
+
+        // ============================================
+        // SECCIÓN 8: CÁLCULOS
+        // ============================================
+        function calcularMedicion(items, tipo) {
+            return items.reduce((t, i) => {
+                if (tipo === 'tabiques') return t + ((parseFloat(i.metros) || 0) * (parseFloat(i.altura) || 0));
+                if (tipo === 'techos') return t + ((parseFloat(i.ancho) || 0) * (parseFloat(i.largo) || 0));
+                if (tipo === 'horas') return t + (parseFloat(i.horas) || 0);
+                return t + (parseFloat(i.metros) || 0);
+            }, 0);
+        }
+
+        function calcularSubtotal(items, tipo) {
+            return items.reduce((t, i) => {
+                if (tipo === 'tabiques') return t + ((parseFloat(i.metros) || 0) * (parseFloat(i.altura) || 0) * (parseFloat(i.precio) || 0));
+                if (tipo === 'techos') return t + ((parseFloat(i.ancho) || 0) * (parseFloat(i.largo) || 0) * (parseFloat(i.precio) || 0));
+                if (tipo === 'horas') return t + ((parseFloat(i.horas) || 0) * (parseFloat(i.precio) || 0));
+                return t + ((parseFloat(i.metros) || 0) * (parseFloat(i.precio) || 0));
+            }, 0);
+        }
+
+        function calcularSubtotalGeneral() {
+            return calcularSubtotal(state.tabiques, 'tabiques') +
+                   calcularSubtotal(state.techos, 'techos') +
+                   calcularSubtotal(state.cajones, 'cajones') +
+                   calcularSubtotal(state.tabicas, 'tabicas') +
+                   calcularSubtotal(state.cantoneras, 'cantoneras') +
+                   calcularSubtotal(state.horas, 'horas');
+        }
+
+        function calcularTotal() {
+            const sub = calcularSubtotalGeneral();
+            const desc = sub * (state.descuento / 100);
+            const base = sub - desc;
+            return base + (base * (state.iva / 100));
+        }
+
+        // ============================================
+        // SECCIÓN 9: EXPORTAR PDF
+        // ============================================
+        function exportarPDF() {
+            if (!state.cliente.nombre.trim()) {
+                mostrarNotif('Falta nombre del cliente', 'error');
+                return;
+            }
+            const sub = calcularSubtotalGeneral();
+            const desc = sub * (state.descuento / 100);
+            const base = sub - desc;
+            const iva = base * (state.iva / 100);
+            const total = base + iva;
+            const pendiente = total - (state.anticipo || 0);
+
+            let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Presupuesto ${state.presupuesto.numero}</title><style>
+                body{font-family:Arial;padding:30px;color:#1e293b;line-height:1.6}
+                .header{border-bottom:4px solid #2563eb;padding-bottom:24px;margin-bottom:32px;display:flex;justify-content:space-between}
+                h1{color:#2563eb;font-size:36px;font-weight:700;margin-bottom:4px}
+                .numero{font-size:18px;color:#64748b;font-weight:600}
+                .badge{display:inline-block;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:600;margin-top:8px}
+                .badge-pendiente{background:#fef3c7;color:#92400e}
+                .badge-aprobado{background:#d1fae5;color:#065f46}
+                .badge-rechazado{background:#fee2e2;color:#991b1b}
+                .empresa{text-align:right}
+                .empresa-nombre{font-weight:700;font-size:18px;color:#2563eb;margin-bottom:6px}
+                .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px}
+                .info-box{background:#f8fafc;padding:24px;border-radius:12px;border-left:4px solid #2563eb}
+                .info-box h3{color:#2563eb;margin-bottom:12px;font-size:16px;font-weight:700}
+                table{width:100%;border-collapse:collapse;margin:20px 0}
+                th{background:#f1f5f9;padding:14px 16px;text-align:left;font-size:13px;font-weight:700;border-bottom:2px solid:#cbd5e1}
+                td{padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:14px}
+                .totales{background:linear-gradient(135deg,#f8fafc 0%,#eff6ff 100%);padding:28px;border-radius:12px;margin-top:32px;border:2px solid #bfdbfe}
+                .totales-row{display:flex;justify-content:space-between;padding:10px 0;font-size:15px}
+                .totales-row.destacado{font-size:20px;border-top:3px solid #2563eb;padding-top:18px;margin-top:12px}
+                .totales-row.destacado .valor{color:#2563eb;font-size:28px;font-weight:700}
+                .notas{background:#fffbeb;padding:20px;border-radius:10px;border-left:4px solid #f59e0b;margin-top:24px}
+                .footer{margin-top:48px;padding-top:24px;border-top:2px solid #e2e8f0;text-align:center;font-size:13px;color:#64748b}
+            </style></head><body>`;
+            
+            // Header
+            html += `<div class="header">
+                <div>
+                    <h1>PRESUPUESTO</h1>
+                    <p class="numero">${state.presupuesto.numero}</p>
+                    <span class="badge badge-${state.presupuesto.estado}">${state.presupuesto.estado.toUpperCase()}</span>
+                </div>
+                <div class="empresa">
+                    <p class="empresa-nombre">${state.empresa.nombre}</p>
+                    ${state.empresa.cif ? `<p>CIF: ${state.empresa.cif}</p>` : ''}
+                    ${state.empresa.direccion ? `<p>${state.empresa.direccion}</p>` : ''}
+                    ${state.empresa.telefono ? `<p>📞 ${state.empresa.telefono}</p>` : ''}
+                    ${state.empresa.email ? `<p>✉️ ${state.empresa.email}</p>` : ''}
+                    ${state.empresa.web ? `<p>🌐 ${state.empresa.web}</p>` : ''}
+                </div>
+            </div>`;
+
+            // Info grid
+            html += `<div class="info-grid">
+                <div class="info-box">
+                    <h3>📋 Datos del Presupuesto</h3>
+                    <p><strong>Fecha:</strong> ${new Date(state.presupuesto.fecha).toLocaleDateString('es-ES')}</p>
+                    <p><strong>Validez:</strong> ${state.presupuesto.validez}</p>
+                </div>
+                <div class="info-box">
+                    <h3>👤 Cliente</h3>
+                    <p><strong>${state.cliente.nombre}</strong></p>
+                    ${state.cliente.telefono ? `<p>📞 ${state.cliente.telefono}</p>` : ''}
+                    ${state.cliente.direccion ? `<p>📍 ${state.cliente.direccion}</p>` : ''}
+                    ${state.cliente.email ? `<p>✉️ ${state.cliente.email}</p>` : ''}
+                </div>
+            </div>`;
+            
+            // Secciones
+            const secciones = [
+                { n: '🧱 Tabiques', items: state.tabiques, tipo: 'tabiques', campos: ['Metros', 'Altura', '€/m²'], u: 'm²' },
+                { n: '🏠 Techos', items: state.techos, tipo: 'techos', campos: ['Ancho', 'Largo', '€/m²'], u: 'm²' },
+                { n: '📦 Cajones', items: state.cajones, tipo: 'cajones', campos: ['Metros', '€/m'], u: 'm' },
+                { n: '📐 Tabicas', items: state.tabicas, tipo: 'tabicas', campos: ['Metros', '€/m'], u: 'm' },
+                { n: '📏 Cantoneras', items: state.cantoneras, tipo: 'cantoneras', campos: ['Metros', '€/m'], u: 'm' },
+                { n: '⏱️ Horas', items: state.horas, tipo: 'horas', campos: ['Fecha', 'Horas', '€/h'], u: 'h' }
+            ];
+
+            secciones.forEach(s => {
+                if (s.items.length > 0) {
+                    const med = calcularMedicion(s.items, s.tipo);
+                    const sub = calcularSubtotal(s.items, s.tipo);
+                    html += `<h3 style="background:linear-gradient(135deg,#2563eb 0%,#3b82f6 100%);color:white;padding:14px 24px;border-radius:10px;margin:32px 0 16px">${s.n}</h3>`;
+                    html += `<p style="background:#eff6ff;padding:12px 20px;border-radius:8px;font-weight:600;color:#2563eb">📊 Medición total: ${med.toFixed(2)} ${s.u}</p>`;
+                    html += `<table><thead><tr><th style="width:35%">Descripción</th>`;
+                    s.campos.forEach(c => html += `<th>${c}</th>`);
+                    html += `<th style="text-align:right">Importe</th></tr></thead><tbody>`;
+                    
+                    s.items.forEach(i => {
+                        html += `<tr><td>${i.descripcion || 'Sin descripción'}</td>`;
+                        if (s.tipo === 'tabiques') {
+                            html += `<td>${i.metros||0}</td><td>${i.altura||0}</td><td>${i.precio||0} €</td><td style="text-align:right;font-weight:700">${((parseFloat(i.metros)||0)*(parseFloat(i.altura)||0)*(parseFloat(i.precio)||0)).toFixed(2)} €</td>`;
+                        } else if (s.tipo === 'techos') {
+                            html += `<td>${i.ancho||0}</td><td>${i.largo||0}</td><td>${i.precio||0} €</td><td style="text-align:right;font-weight:700">${((parseFloat(i.ancho)||0)*(parseFloat(i.largo)||0)*(parseFloat(i.precio)||0)).toFixed(2)} €</td>`;
+                        } else if (s.tipo === 'horas') {
+                            html += `<td>${i.fecha?new Date(i.fecha).toLocaleDateString('es-ES'):'-'}</td><td>${i.horas||0}</td><td>${i.precio||0} €</td><td style="text-align:right;font-weight:700">${((parseFloat(i.horas)||0)*(parseFloat(i.precio)||0)).toFixed(2)} €</td>`;
+                        } else {
+                            html += `<td>${i.metros||0}</td><td>${i.precio||0} €</td><td></td><td style="text-align:right;font-weight:700">${((parseFloat(i.metros)||0)*(parseFloat(i.precio)||0)).toFixed(2)} €</td>`;
+                        }
+                        html += `</tr>`;
+                    });
+                    
+                    html += `</tbody></table><p style="text-align:right;font-weight:700;color:#2563eb;font-size:16px;margin:12px 0">Subtotal ${s.n}: ${sub.toFixed(2)} €</p>`;
+                }
+            });
+
+            // Notas
+            if (state.presupuesto.notas) {
+                html += `<div class="notas"><h4 style="color:#92400e;font-size:16px;margin-bottom:8px">📝 Notas y Observaciones</h4><p>${state.presupuesto.notas.replace(/\n/g, '<br>')}</p></div>`;
+            }
+
+            // Totales
+            html += `<div class="totales">
+                <div class="totales-row"><span>Subtotal</span><span style="font-weight:700">${sub.toFixed(2)} €</span></div>`;
+            
+            if (state.descuento > 0) {
+                html += `<div class="totales-row"><span>Descuento (${state.descuento}%)</span><span style="font-weight:700">-${desc.toFixed(2)} €</span></div>`;
+            }
+            
+            html += `<div class="totales-row"><span>Base Imponible</span><span style="font-weight:700">${base.toFixed(2)} €</span></div>
+                <div class="totales-row"><span>IVA (${state.iva}%)</span><span style="font-weight:700">${iva.toFixed(2)} €</span></div>
+                <div class="totales-row destacado"><span>TOTAL</span><span class="valor">${total.toFixed(2)} €</span></div>`;
+            
+            if (state.anticipo > 0) {
+                html += `<div class="totales-row" style="margin-top:12px;padding-top:12px;border-top:2px dashed #cbd5e1">
+                    <span>Anticipo</span><span style="font-weight:700">-${state.anticipo.toFixed(2)} €</span>
+                </div>
+                <div class="totales-row" style="font-size:18px;font-weight:700">
+                    <span>Pendiente de Pago</span><span style="color:#dc2626">${pendiente.toFixed(2)} €</span>
+                </div>`;
+            }
+            
+            html += `</div>`;
+
+            // Footer
+            html += `<div class="footer">
+                <p><strong>${state.empresa.nombre}</strong></p>
+                <p>Este presupuesto tiene una validez de ${state.presupuesto.validez}</p>
+                <p style="margin-top:12px">Generado el ${new Date().toLocaleDateString('es-ES')} a las ${new Date().toLocaleTimeString('es-ES')}</p>
+            </div></body></html>`;
+
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Presupuesto_${state.presupuesto.numero}_${state.cliente.nombre.replace(/\s+/g,'_')}.html`;
+            a.click();
+            URL.revokeObjectURL(url);
+            mostrarNotif('Presupuesto exportado correctamente');
+            state.menuAbierto = false;
+            render();
+        }
+
+        // ============================================
+        // SECCIÓN 10: RENDER CALCULADORA
+        // ============================================
+    function renderCalculadora() {
+        if (!state.calculadora.abierta) return '';
+        const total = state.calculadora.medidas.reduce((s, v) => s + v, 0);
+        const labels = {metros: 'Metros', altura: 'Altura', ancho: 'Ancho', largo: 'Largo', horas: 'Horas'};
+        
+        return `<div class="fixed inset-0 flex items-center justify-center p-4 z-50" style="background:rgba(0,0,0,0.6)" onclick="if(event.target===this) cerrarCalculadora()">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full fade-in">
+                <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-2xl flex justify-between items-center">
+                    <h3 class="text-xl font-bold flex items-center gap-2">
+                        ${icons.ruler} Sumar ${labels[state.calculadora.campo] || 'Medidas'}
+                    </h3>
+                    <button onclick="cerrarCalculadora()" class="p-2 hover:bg-blue-800 rounded-lg transition">${icons.x}</button>
+                </div>
+                
+                <div class="p-6">
+                    <div class="flex gap-2 mb-6">
+                        <input type="number" id="nueva-medida" placeholder="Ej: 2.50" 
+                            class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl text-lg input-focus" 
+                            step="0.01" inputmode="decimal" 
+                            onkeypress="if(event.key==='Enter') añadirMedida()">
+                        <button onclick="añadirMedida()" 
+                            class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold transition">
+                            ${icons.plus}
+                        </button>
+                    </div>
+                    
+                    ${state.calculadora.medidas.length === 0 ? `
+                        <div class="text-center py-12 text-gray-400">
+                            <div class="text-6xl mb-4">📏</div>
+                            <p class="text-lg mb-2">Sin medidas</p>
+                            <p class="text-sm">Añade medidas para calcular el total</p>
+                            <p class="text-xs mt-3 text-gray-500">Ejemplo: 2.5 + 3.8 + 1.2 = 7.5 m</p>
+                        </div>
+                    ` : `
+                        <div class="space-y-2 mb-6 max-h-80 overflow-y-auto">
+                            ${state.calculadora.medidas.map((m, i) => `
+                                <div class="flex justify-between items-center bg-gradient-to-r from-gray-50 to-blue-50 p-4 rounded-xl hover:shadow-md transition">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-blue-600 font-bold text-lg">#${i + 1}</span>
+                                        <span class="text-2xl font-bold text-gray-800">${m.toFixed(2)}</span>
+                                        <span class="text-gray-500">m</span>
+                                    </div>
+                                    <button onclick="eliminarMedida(${i})" 
+                                        class="text-red-600 hover:bg-red-50 p-2 rounded-lg transition">
+                                        ${icons.trash}
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-xl border-2 border-blue-200 mb-6">
+                            <div class="flex justify-between items-center">
+                                <span class="text-lg font-bold text-gray-700">TOTAL</span>
+                                <span class="text-4xl font-bold text-blue-600">${total.toFixed(2)} m</span>
+                            </div>
+                        </div>
+                        
+                        <button onclick="aplicarSuma()" 
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl text-lg font-bold transition">
+                            Aplicar Suma
+                        </button>
+                    `}
+                </div>
+            </div>
+        </div>`;
     }
 
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
+    // ============================================
+    // SECCIÓN 11: RENDER SECCIONES
+    // ============================================
+    function renderSeccion(titulo, icono, subtitulo, tipo, campos, unidad) {
+        const items = state[tipo];
+        const med = calcularMedicion(items, tipo);
+        const sub = calcularSubtotal(items, tipo);
+        const labels = { metros: 'Metros', altura: 'Altura', ancho: 'Ancho', largo: 'Largo', precio: 'Precio €', horas: 'Horas' };
+        const esHoras = tipo === 'horas';
+        const gridCols = campos.length === 3 ? 'grid-cols-3' : 'grid-cols-2';
+
+        return `<div class="bg-white rounded-xl shadow-lg p-4 mb-4">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="text-3xl">${icono}</div>
+                    <div>
+                        <h2 class="font-bold text-lg text-gray-800">${titulo}</h2>
+                        <p class="text-sm text-gray-500">${subtitulo}</p>
+                    </div>
+                </div>
+                <button onclick="addItem('${tipo}')" 
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition">
+                    ${icons.plus} Añadir
+                </button>
+            </div>
+            
+            ${items.length === 0 ? `
+                <div class="text-center py-8 text-gray-400 bg-gray-50 rounded-lg">
+                    <p class="text-lg">Sin elementos</p>
+                    <p class="text-sm mt-1">Haz clic en "Añadir" para crear uno</p>
+                </div>
+            ` : `
+                <div class="space-y-3">
+                    ${items.map(i => `
+                        <div class="bg-gradient-to-r from-gray-50 to-blue-50 p-4 rounded-xl border border-gray-200">
+                            ${esHoras ? `
+                                <div class="mb-3">
+                                    <label class="text-xs text-gray-600 font-semibold mb-1 block flex items-center gap-1">
+                                        📅 Fecha del trabajo
+                                    </label>
+                                    <input type="date" value="${i.fecha || ''}" 
+                                        oninput="updateItem('${tipo}', ${i.id}, 'fecha', this.value)" 
+                                        class="w-full px-3 py-2.5 border border-gray-300 rounded-lg input-focus">
+                                </div>
+                            ` : ''}
+                            
+                            <input type="text" placeholder="Descripción del trabajo" value="${i.descripcion}" 
+                                oninput="updateItem('${tipo}', ${i.id}, 'descripcion', this.value)" 
+                                class="w-full px-4 py-3 mb-3 border border-gray-300 rounded-lg input-focus text-base font-medium">
+                            
+                            <div class="grid ${gridCols} gap-2 mb-3">
+                                ${campos.map(c => {
+                                    const calc = c !== 'precio';
+                                    return `
+                                        <div class="relative">
+                                            <label class="text-xs text-gray-600 font-semibold mb-1 block">${labels[c]}</label>
+                                            <input type="number" placeholder="${labels[c]}" value="${i[c]}" 
+                                                oninput="updateItem('${tipo}', ${i.id}, '${c}', this.value)" 
+                                                class="w-full px-3 py-2.5 ${calc ? 'pr-10' : ''} border border-gray-300 rounded-lg input-focus" 
+                                                step="0.01" inputmode="decimal">
+                                            ${calc ? `
+                                                <button onclick="abrirCalculadora('${tipo}', ${i.id}, '${c}')" 
+                                                    class="absolute right-2 bottom-2.5 text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition" 
+                                                    title="Sumar medidas">
+                                                    ${icons.ruler}
+                                                </button>
+                                            ` : ''}
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                            
+                            <button onclick="removeItem('${tipo}', ${i.id})" 
+                                class="w-full bg-red-600 hover:bg-red-700 text-white px-3 py-2.5 rounded-lg flex items-center justify-center gap-2 transition">
+                                ${icons.trash} Eliminar
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="mt-4 pt-4 border-t-2 border-gray-200 space-y-2">
+                    <div class="flex justify-between items-center bg-green-50 px-4 py-3 rounded-lg">
+                        <span class="font-semibold text-gray-700 flex items-center gap-2">
+                            📊 Medición Total
+                        </span>
+                        <span class="text-xl font-bold text-green-600">${med.toFixed(2)} ${unidad}</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-blue-50 px-4 py-3 rounded-lg">
+                        <span class="font-semibold text-gray-700">Subtotal</span>
+                        <span class="text-2xl font-bold text-blue-600">${sub.toFixed(2)} €</span>
+                    </div>
+                </div>
+            `}
+        </div>`;
     }
+
+    // ============================================
+    // SECCIÓN 12: RENDER PRINCIPAL
+    // ============================================
+    function render() {
+        const sub = calcularSubtotalGeneral();
+        const desc = sub * (state.descuento / 100);
+        const base = sub - desc;
+        const iva = base * (state.iva / 100);
+        const total = base + iva;
+        const pendiente = total - (state.anticipo || 0);
+
+        document.getElementById('root').innerHTML = `
+            <div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pb-32">
+                <div class="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white p-4 sticky top-0 z-40 shadow-xl">
+                    <div class="flex justify-between items-center max-w-7xl mx-auto">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center overflow-hidden">
+                                <img src="logo.png" alt="Logo" class="w-full h-full object-cover">
+                            </div>
+                            <div>
+                                <h1 class="text-xl font-bold">Presupuestos Pro</h1>
+                                <p class="text-sm text-blue-100">${state.empresa.nombre}</p>
+                            </div>
+                        </div>
+                        <button onclick="state.menuAbierto=!state.menuAbierto; render()" 
+                            class="p-2 hover:bg-white/20 rounded-lg transition">
+                            ${state.menuAbierto ? icons.x : icons.menu}
+                        </button>
+                    </div>
+                </div>
+
+                ${state.menuAbierto ? `
+                    <div class="bg-white shadow-xl border-b fade-in">
+                        <div class="p-4 grid grid-cols-2 gap-3 max-w-7xl mx-auto">
+                            <button onclick="nuevoPresupuesto()" 
+                                class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition">
+                                ${icons.file} Nuevo
+                            </button>
+                            <button onclick="state.mostrarGuardados=!state.mostrarGuardados; state.menuAbierto=false; render()" 
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition">
+                                ${icons.file} Guardados (${state.presupuestos.length})
+                            </button>
+                            <button onclick="exportarPDF()" 
+                                class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition">
+                                ${icons.download} Exportar PDF
+                            </button>
+                            <button onclick="guardarPresupuesto()" 
+                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition">
+                                ${icons.save} Guardar
+                            </button>
+                            <button onclick="state.mostrarAjustes=!state.mostrarAjustes; state.menuAbierto=false; render()" 
+                                class="col-span-2 bg-gray-700 hover:bg-gray-800 text-white px-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition">
+                                ${icons.settings} Configuración Empresa
+                            </button>
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${state.mostrarAjustes ? `
+                    <div class="fixed inset-0 flex items-center justify-center p-4 z-50" style="background:rgba(0,0,0,0.6)" onclick="if(event.target===this) {state.mostrarAjustes=false; render()}">
+                        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto fade-in">
+                            <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-2xl flex justify-between items-center">
+                                <h3 class="text-2xl font-bold flex items-center gap-2">
+                                    ${icons.settings} Configuración de Empresa
+                                </h3>
+                                <button onclick="state.mostrarAjustes=false; render()" 
+                                    class="p-2 hover:bg-blue-800 rounded-lg transition">${icons.x}</button>
+                            </div>
+                            
+                            <div class="p-6 space-y-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Nombre de la Empresa *</label>
+                                    <input type="text" value="${state.empresa.nombre}" 
+                                        oninput="state.empresa.nombre=this.value" 
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus">
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">CIF/NIF</label>
+                                        <input type="text" value="${state.empresa.cif}" 
+                                            oninput="state.empresa.cif=this.value" 
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Teléfono</label>
+                                        <input type="tel" value="${state.empresa.telefono}" 
+                                            oninput="state.empresa.telefono=this.value" 
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus">
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Dirección</label>
+                                    <input type="text" value="${state.empresa.direccion}" 
+                                        oninput="state.empresa.direccion=this.value" 
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus">
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                                        <input type="email" value="${state.empresa.email}" 
+                                            oninput="state.empresa.email=this.value" 
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Web</label>
+                                        <input type="text" value="${state.empresa.web}" 
+                                            oninput="state.empresa.web=this.value" 
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus">
+                                    </div>
+                                </div>
+                                
+                                <button onclick="guardarConfigEmpresa()" 
+                                    class="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-lg text-lg font-bold transition">
+                                    ${icons.save} Guardar Configuración
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${state.mostrarGuardados ? `
+                    <div class="p-4 fade-in max-w-7xl mx-auto">
+                        <div class="bg-white rounded-xl shadow-lg p-4">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                    ${icons.file} Presupuestos Guardados (${state.presupuestos.length})
+                                </h3>
+                                <button onclick="state.mostrarGuardados=false; render()" 
+                                    class="text-gray-500 hover:text-gray-700 p-2">
+                                    ${icons.x}
+                                </button>
+                            </div>
+                            
+                            ${state.presupuestos.length === 0 ? `
+                                <div class="text-center py-12 text-gray-400">
+                                    <div class="text-6xl mb-4">📋</div>
+                                    <p class="text-lg">No hay presupuestos guardados</p>
+                                    <p class="text-sm mt-2">Crea tu primer presupuesto</p>
+                                </div>
+                            ` : `
+                                <div class="space-y-3">
+                                    ${state.presupuestos.map(p => `
+                                        <div class="bg-gradient-to-r from-gray-50 to-blue-50 p-4 rounded-xl border border-gray-200 hover:shadow-md transition">
+                                            <div class="flex justify-between items-start mb-3">
+                                                <div>
+                                                    <p class="font-bold text-lg text-gray-800">${p.cliente.nombre}</p>
+                                                    <p class="text-sm text-gray-600">${p.numero}</p>
+                                                    <p class="text-xs text-gray-500 mt-1">
+                                                        ${new Date(p.fecha).toLocaleDateString('es-ES')}
+                                                    </p>
+                                                </div>
+                                                <div class="text-right">
+                                                    <p class="text-2xl font-bold text-blue-600">${p.total.toFixed(2)} €</p>
+                                                    <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full ${
+                                                        p.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
+                                                        p.estado === 'aprobado' ? 'bg-green-100 text-green-800' :
+                                                        'bg-red-100 text-red-800'
+                                                    }">
+                                                        ${p.estado.toUpperCase()}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <button onclick='cargarPresupuesto(${JSON.stringify(p).replace(/'/g, "\\'")})'
+                                                    class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition">
+                                                    Cargar
+                                                </button>
+                                                <button onclick='copiarPresupuesto(${JSON.stringify(p).replace(/'/g, "\\'")})'
+                                                    class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition">
+                                                    Copiar
+                                                </button>
+                                                <button onclick="eliminarPresupuesto(${p.id})" 
+                                                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition">
+                                                    ${icons.trash}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${!state.mostrarGuardados ? `
+                    <div class="p-4 fade-in max-w-7xl mx-auto">
+                        <div class="bg-white rounded-xl shadow-lg p-4 mb-4">
+                            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                ${icons.file} Datos del Presupuesto
+                            </h2>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Número</label>
+                                    <input type="text" value="${state.presupuesto.numero}" readonly
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 font-mono font-bold">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Fecha</label>
+                                    <input type="date" value="${state.presupuesto.fecha}" 
+                                        oninput="state.presupuesto.fecha=this.value" 
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Estado</label>
+                                    <select value="${state.presupuesto.estado}" 
+                                        onchange="state.presupuesto.estado=this.value; render()" 
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus">
+                                        <option value="pendiente">Pendiente</option>
+                                        <option value="aprobado">Aprobado</option>
+                                        <option value="rechazado">Rechazado</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Validez</label>
+                                    <input type="text" value="${state.presupuesto.validez}" 
+                                        oninput="state.presupuesto.validez=this.value" 
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus"
+                                        placeholder="Ej: 30 días">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl shadow-lg p-4 mb-4">
+                            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                ${icons.user} Datos del Cliente
+                            </h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input type="text" placeholder="Nombre del cliente *" value="${state.cliente.nombre}" 
+                                    oninput="state.cliente.nombre=this.value" 
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus">
+                                <input type="tel" placeholder="Teléfono" value="${state.cliente.telefono}" 
+                                    oninput="state.cliente.telefono=this.value" 
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus">
+                                <input type="text" placeholder="Dirección" value="${state.cliente.direccion}" 
+                                    oninput="state.cliente.direccion=this.value" 
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus">
+                                <input type="email" placeholder="Email" value="${state.cliente.email}" 
+                                    oninput="state.cliente.email=this.value" 
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus">
+                            </div>
+                        </div>
+
+                        ${renderSeccion('Tabiques', '🧱', 'Metros × Altura × Precio', 'tabiques', ['metros', 'altura', 'precio'], 'm²')}
+                        ${renderSeccion('Techos', '🏠', 'Ancho × Largo × Precio', 'techos', ['ancho', 'largo', 'precio'], 'm²')}
+                        ${renderSeccion('Cajones', '📦', 'Metros × Precio', 'cajones', ['metros', 'precio'], 'm')}
+                        ${renderSeccion('Tabicas', '📐', 'Metros × Precio', 'tabicas', ['metros', 'precio'], 'm')}
+                        ${renderSeccion('Cantoneras', '📏', 'Metros × Precio', 'cantoneras', ['metros', 'precio'], 'm')}
+                        ${renderSeccion('Horas de Trabajo', '⏱️', 'Horas × Precio/hora', 'horas', ['horas', 'precio'], 'h')}
+
+                        <div class="bg-white rounded-xl shadow-lg p-4 mb-4">
+                            <h2 class="text-xl font-bold text-gray-800 mb-4">💰 Ajustes Finales</h2>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">IVA (%)</label>
+                                    <select value="${state.iva}" onchange="state.iva=parseFloat(this.value); render()" 
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus">
+                                        <option value="21">21% (General)</option>
+                                        <option value="10">10% (Reducido)</option>
+                                        <option value="4">4% (Superreducido)</option>
+                                        <option value="0">0% (Exento)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Descuento (%)</label>
+                                    <input type="number" value="${state.descuento}" 
+                                        oninput="state.descuento=parseFloat(this.value)||0; render()" 
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus" 
+                                        step="0.01" min="0" max="100">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Anticipo (€)</label>
+                                    <input type="number" value="${state.anticipo}" 
+                                        oninput="state.anticipo=parseFloat(this.value)||0; render()"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus" 
+                                        step="0.01" min="0">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">📝 Notas y Observaciones</label>
+                                <textarea value="${state.presupuesto.notas}" 
+                                    oninput="state.presupuesto.notas=this.value" 
+                                    rows="3" placeholder="Añade notas adicionales sobre el presupuesto..."
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus resize-none">${state.presupuesto.notas}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+
+                <div class="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white p-4 shadow-2xl z-30">
+                    <div class="max-w-7xl mx-auto">
+                        ${state.descuento > 0 || state.anticipo > 0 ? `
+                            <div class="flex justify-between text-sm mb-2 opacity-90">
+                                <span>Subtotal: ${sub.toFixed(2)} €</span>
+                                ${state.descuento > 0 ? `<span>Descuento: -${desc.toFixed(2)} €</span>` : ''}
+                            </div>
+                        ` : ''}
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <span class="text-sm opacity-90">TOTAL (IVA ${state.iva}% incluido)</span>
+                                <div class="text-3xl font-bold">${total.toFixed(2)} €</div>
+                            </div>
+                            ${state.anticipo > 0 ? `
+                                <div class="text-right">
+                                    <span class="text-sm opacity-90">Pendiente de Pago</span>
+                                    <div class="text-2xl font-bold text-yellow-300">${pendiente.toFixed(2)} €</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+
+                ${renderCalculadora()}
+            </div>
+        `;
+    }
+
+    // ============================================
+    // INICIALIZACIÓN
+    // ============================================
+    cargarPresupuestos();
+    render();
 </script>
-
 </body>
 </html>
