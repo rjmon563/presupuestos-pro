@@ -1,4 +1,4 @@
-const CACHE_NAME = 'presu-pro-cache-v1';
+const CACHE_NAME = 'presu-pro-cache-v2';
 const ASSETS_TO_CACHE = [
   './index.html',
   './manifest.json',
@@ -20,4 +20,5 @@ self.addEventListener('fetch', (event) => {
       return response || fetch(event.request);
     })
   );
+
 });
